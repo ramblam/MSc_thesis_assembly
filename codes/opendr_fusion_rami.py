@@ -307,6 +307,26 @@ class FusionNode:
         time.sleep(1)
         self.move_cartesian_space_2D([pose_intermediate.pose.position.x, pose_intermediate.pose.position.y], False)
 
+    def rotate_ee_own(self, angle, direction="clockwise"):
+        '''
+        45 is neutral math.pi/4
+        -45 rotate to the left -math.pi/4
+        135 rotate to the right 3*math.pi/4
+        '''
+        print("rotate_ee")
+        joint_goal = self.own_commander.get_current_joint_values()
+        if direction == "counter_clockwise":
+            yaw = angle + math.pi/4
+        else:
+            yaw = angle - math.pi/4
+
+        if yaw > 3*math.pi/4:
+            yaw = yaw - math.pi
+        elif yaw < -math.pi/4:
+            yaw = yaw + math.pi
+        joint_goal[6] = yaw
+        self.move_joint_space(joint_goal)
+
     def voice_callback(self, msg):
         msg = msg.data.split(" ")
         print(msg)
@@ -572,7 +592,7 @@ class FusionNode:
                 robot_pose = self.own_commander.get_current_pose().pose
                 orientation_list = [robot_pose.orientation.x, robot_pose.orientation.y, robot_pose.orientation.z, robot_pose.orientation.w]
                 (roll, pitch, yaw) = euler_from_quaternion(orientation_list)
-                self.rotate_EE(yaw)
+                self.rotate_ee_own(yaw, "clockwise")
 
         elif msg[0] == 'POSITION':
 
