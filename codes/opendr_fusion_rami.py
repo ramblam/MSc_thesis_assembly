@@ -238,7 +238,6 @@ class FusionNode:
             print("Elbow detected!")
             self.elbow_detected = True
 
-            #Check if these are needed anymore:
             eulers = euler_from_quaternion([self.elbow_pose.pose.orientation.x, self.elbow_pose.pose.orientation.y, self.elbow_pose.pose.orientation.z, self.elbow_pose.pose.orientation.w])
             print("Roll here: ", eulers[0]-0.1)
             quaternions = quaternion_from_euler(eulers[0]-0.1, eulers[1], eulers[2])
@@ -307,25 +306,27 @@ class FusionNode:
         time.sleep(1)
         self.move_cartesian_space_2D([pose_intermediate.pose.position.x, pose_intermediate.pose.position.y], False)
 
-    def rotate_ee_own(self, angle, direction="clockwise"):
-        '''
-        45 is neutral math.pi/4
-        -45 rotate to the left -math.pi/4
-        135 rotate to the right 3*math.pi/4
-        '''
+    def rotate_ee_own(self, clockwise= True):
         print("rotate_ee")
         joint_goal = self.own_commander.get_current_joint_values()
-        if direction == "counter_clockwise":
-            yaw = angle + math.pi/4
-        else:
-            yaw = angle - math.pi/4
 
-        if yaw > 3*math.pi/4:
-            yaw = yaw - math.pi
-        elif yaw < -math.pi/4:
-            yaw = yaw + math.pi
-        joint_goal[6] = yaw
-        self.move_joint_space(joint_goal)
+        rot_stepSize = self.step_size * 10
+        if not clockwise:
+            rot_stepSize = rot_stepSize * (-1)
+
+        # Joit 7 limits. max: 2.8973, min: -2.8973
+        if joint_goal[6] + rot_stepSize >= 2.8973:
+            print("Joint 7 upper limit reached. Rotate counter-clockwise. Command: ROTATE COUNTERCLOCKWISE")
+            self.tts_pub.publish("Joint 7 upper limit reached. Rotate counter-clockwise instead")
+        elif joint_goal[6] + rot_stepSize <= -2.8973:
+            print("Joint 7 lower limit reached. Rotate clockwise. Command: ROTATE CLOCKWISE")
+            self.tts_pub.publish("Joint 7 lower limit reached. Rotate clockwise instead")
+        else:
+            print("Rotating tool")
+            self.tts_pub.publish("Rotating tool")
+            print(joint_goal[6] + rot_stepSize)
+            joint_goal[6] +=rot_stepSize
+            self.move_joint_space(joint_goal)
 
     def voice_callback(self, msg):
         msg = msg.data.split(" ")
@@ -586,13 +587,10 @@ class FusionNode:
                 self.tts_pub.publish("Closing the gripper")
                 self.move_gripper(0.00)
             elif msg[1] == 'ROTATE':
-                #This is not tested yet!
-                print("Rotating the gripper")
-                self.tts_pub.publish("Rotating the gripper")
-                robot_pose = self.own_commander.get_current_pose().pose
-                orientation_list = [robot_pose.orientation.x, robot_pose.orientation.y, robot_pose.orientation.z, robot_pose.orientation.w]
-                (roll, pitch, yaw) = euler_from_quaternion(orientation_list)
-                self.rotate_ee_own(yaw, "clockwise")
+                if msg[2] == 'CLOCKWISE':
+                    self.rotate_ee_own()
+                elif msg[2] == 'COUNTERCLOCKWISE' or msg[2] == 'ANTICLOCKWISE':
+                    self.rotate_ee_own(False)
 
         elif msg[0] == 'POSITION':
 
