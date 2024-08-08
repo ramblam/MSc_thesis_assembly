@@ -13,9 +13,7 @@ audioPath = "/usr/share/creoir/"
 lastAction = ""
 
 pub=rospy.Publisher("/text_commands", String, queue_size=10)
-
 sub_listen = True
-
 wakeup_counter = 0
 task = 1
 did_you_mean_tool = ""
@@ -29,7 +27,7 @@ def on_connect(client, userdata, flags, rc):
 def on_message_intent(client, userdata, msg):
     print(msg.topic+" "+str(msg.payload.decode("utf-8")))
     dynaset_assembly_eventloop(msg.payload, msg.topic)
-    #This avoids going back to WUW
+    #This avoids going back to WUW:
     formatPayload = {"contextName":'MAIN_OVS', "timeOut":10000}
     json_dump = json.dumps(formatPayload)
     client.publish("creoir/asr/setContext", json_dump)
@@ -81,7 +79,6 @@ def setOvsParameters():
 def handOver(objectName, jsonData):
         print(objectName)
         print(jsonData)
-        formatTTS = "Handing over {}.".format(objectName)
         pub.publish("GIVE "+objectName.upper())
 
 def ros_to_creoir_tts_callback(msg):
@@ -97,7 +94,7 @@ def ros_to_creoir_tts_callback(msg):
             did_you_mean_tool = "screwdriver"
             switchContext("YESNO", 10000)
         elif msg =="setContextMain":
-            #This is used for extending the timeout so that it doesn't run out so easily during robot actions.
+            #This is used for extending the timeout if it runs out during robot actions.
             formatPayload = {"contextName":'MAIN_OVS', "timeOut":10000}
             json_dump = json.dumps(formatPayload)
             client.publish("creoir/asr/setContext", json_dump)
@@ -204,7 +201,6 @@ def dynaset_assembly_eventloop(msg, topic):
             TTS_SayUtteranceMQTT("low_confidence.wav", "wav")
     else:
         if "HAND_OVER" in jsonData["intent"]:
-        	print("jsonData here: ", jsonData)
         	if len(jsonData["slots"]) != 0:
         		if "object" in jsonData["slots"][0]["slotName"]:
         			objectName = jsonData["slots"][0]["slotValue"]
@@ -218,6 +214,7 @@ def dynaset_assembly_eventloop(msg, topic):
                     objectName = jsonData["slots"][0]["slotValue"]
                     placeObject(objectName, jsonData)
                     return
+
             lastAction = jsonData
             
         elif "PAUSE" in jsonData["intent"]:
@@ -240,6 +237,7 @@ def dynaset_assembly_eventloop(msg, topic):
                     objectName = jsonData["slots"][0]["slotValue"]
                     pickObject(objectName, jsonData)
                     return
+
             lastAction = jsonData
             
         elif "QUALITY_CHECK" in jsonData["intent"]:
@@ -252,6 +250,7 @@ def dynaset_assembly_eventloop(msg, topic):
                     objectName = jsonData["slots"][0]["slotValue"]
                     assembleObject(objectName, jsonData)
                     return
+
             lastAction = jsonData
             
         elif "GO_HOME" in jsonData["intent"]:
@@ -270,6 +269,7 @@ def dynaset_assembly_eventloop(msg, topic):
                     elif "direction" in jsonData["slots"][i]["slotName"]:
                         direction = jsonData["slots"][i]["slotValue"]
                 pub.publish("MOVE "+direction.upper()+" "+distance+" "+unit.upper())
+
             lastAction = jsonData
             
         elif "CONTINUE" in jsonData["intent"]:
@@ -285,8 +285,12 @@ def dynaset_assembly_eventloop(msg, topic):
         	lastAction = jsonData
             
         elif "TOOL_ROTATE" in jsonData["intent"]:
-        	pub.publish("TOOL ROTATE")
-        	lastAction = jsonData
+            if len(jsonData["slots"]) != 0:
+                for i in range(len(jsonData["slots"])):
+                    if "rotation_direction" in jsonData["slots"][i]["slotName"]:
+                    	rot_dir = jsonData["slots"][i]["slotValue"]
+                pub.publish("TOOL ROTATE "+rot_dir.upper())
+                lastAction = jsonData
             
         elif "SET_MODE" in jsonData["intent"]:
             if len(jsonData["slots"]) != 0:
@@ -294,6 +298,7 @@ def dynaset_assembly_eventloop(msg, topic):
                     modeName = jsonData["slots"][0]["slotValue"]
                     setMode(modeName, jsonData)
                     return
+
             lastAction = jsonData
             
         elif "MOVE_TO" in jsonData["intent"]:
@@ -302,6 +307,7 @@ def dynaset_assembly_eventloop(msg, topic):
                     position = jsonData["slots"][0]["slotValue"]
                     moveToPosition(position, jsonData)
                     return
+
             lastAction = jsonData
             
         elif "MOVE_ABOVE" in jsonData["intent"]:
@@ -316,6 +322,7 @@ def dynaset_assembly_eventloop(msg, topic):
                     elif "position" in jsonData["slots"][i]["slotName"]:
                     	position = jsonData["slots"][i]["slotValue"]
                 moveAbove(position, distance, unit, jsonData)
+
             lastAction = jsonData
             
         elif "MOVE" in jsonData["intent"]:
@@ -332,6 +339,7 @@ def dynaset_assembly_eventloop(msg, topic):
                     step_size = jsonData["slots"][0]["slotValue"]
                     setStepSize(step_size, jsonData)
                     return
+
             lastAction = jsonData
         
         elif "ANSWER_YES" in jsonData["intent"]:
@@ -351,7 +359,7 @@ def dynaset_assembly_eventloop(msg, topic):
             return
 
 #The main function of the code. It initializes the MQTT client, starts the MQTT handle thread,
-#Gets the current configuration, changes that configuration and gets the configuration again to demostrate the change.
+#Gets the current configuration and changes that configuration.
 #It then enters sleep loop, giving the thread function all of the processing time.
 if __name__ == "__main__":
     try:
