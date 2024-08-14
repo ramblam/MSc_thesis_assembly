@@ -128,24 +128,8 @@ class PickAndPlaceServer(object):
         success = True
 
         z_final = goal.pose.position.z
-        #Original:
-        #z_intermediate = goal.pose.position.z + 0.3
-        #Rami edit:
         z_intermediate = goal.pose.position.z + 0.15
-        #Original:
-        #goal.pose.position.z = z_intermediate
         
-        #Original:
-        #prepose = Pose()
-        #prepose.position.x = 0.4955222156145186
-        #prepose.position.y = -0.11675839207592095
-        #prepose.position.z = 0.3986073776445874
-        #prepose.orientation.x = -0.6609967852858333
-        #prepose.orientation.y = -0.31114417228114366
-        #prepose.orientation.z = -0.27521515925565554
-        #prepose.orientation.w = 0.6249233313080573
-        
-        #Rami edit:
         prepose = Pose()
         prepose.position.x = goal.pose.position.x
         prepose.position.y = goal.pose.position.y
@@ -159,12 +143,6 @@ class PickAndPlaceServer(object):
         time.sleep(1)
         self.move_cartesian_space(goal.pose)
         time.sleep(1)
-        #Original:
-        #self.move_cartesian_space_1D(z_final, True)
-        #time.sleep(1)
-        #Original:
-        #self.move_gripper(0.04)
-        #Rami edit:
         self.move_gripper(0.08)
         time.sleep(1)
         self.move_cartesian_space_1D(z_intermediate, True)
