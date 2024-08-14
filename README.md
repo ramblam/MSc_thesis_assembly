@@ -1,7 +1,7 @@
 # MSc_thesis_assembly
 This repository contains codes for a robot system combining speech recognition, TTS, object detection and robot control.
 
-Notebooks directory contains jupyter notebooks used for image augmentation and training the object detection model. Utilized with changes based on previous work by Ekrekli et al. for their article "Co-Speech Gestures for Human-Robot Collaboration".
+Notebooks directory contains jupyter notebooks used for image augmentation and training the object detection model. Utilized with changes based on previous work by Ekrekli et al. for their article "Co-Speech Gestures for Human-Robot Collaboration" (2023).
 
 Codes directory contains the following:
 
